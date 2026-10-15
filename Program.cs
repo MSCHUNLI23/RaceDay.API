@@ -14,6 +14,13 @@ builder.Services.AddDbContext<ApplicationDBContext>(options =>
 
 var app = builder.Build();
 
+builder.Services.AddAuthentication("RaceDayAuth")
+    .AddCookie("RaceDayAuth", options =>
+    {
+        options.Cookie.Name = "RaceDayAuth";
+        options.LoginPath = "/api/auth/login"; // Adjust if needed
+    });
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -22,6 +29,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
 
 app.UseAuthorization();
 

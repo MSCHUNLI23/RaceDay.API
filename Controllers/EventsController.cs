@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using RaceDay.API.Data;
 using RaceDay.API.Models;
+using Microsoft.AspNetCore.Authorization;   
+using System.Security.Claims;   
 
 namespace RaceDay.API.Controllers
 {

@@ -9,5 +9,6 @@
         public string Location { get; set; }
         public double Distance { get; set; }
         public string EventType { get; set; } // run, walk, cycle
+        public int OrganiserId { get; set; } // Foreign key to User
     }
 }
