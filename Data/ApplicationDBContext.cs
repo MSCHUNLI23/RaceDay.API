@@ -7,6 +7,6 @@ namespace RaceDay.API.Data
     {
         public ApplicationDBContext(DbContextOptions<ApplicationDBContext> options) : base(options) { }
 
-        // DbSets will be added here later
+        public DbSet<Event> Events { get; set; }
     }
 }
