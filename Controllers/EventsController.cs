@@ -1,35 +1,78 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using RaceDay.API.Data;
 using RaceDay.API.Models;
-using Microsoft.AspNetCore.Authorization;   
-using System.Security.Claims;   
 
 namespace RaceDay.API.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class EventsController : ControllerBase
     {
         private readonly ApplicationDBContext _context;
+        public EventsController(ApplicationDBContext context) { _context = context; }
 
-        public EventsController(ApplicationDBContext context)
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
         {
-            _context = context;
+            return Ok(await _context.Events.ToListAsync());
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var ev = await _context.Events.FindAsync(id);
+            if (ev == null) return NotFound();
+            return Ok(ev);
         }
 
         [HttpPost]
-        public IActionResult CreateEvent([FromBody] Event newEvent)
+        [Authorize(Roles = "Organiser")]
+        public async Task<IActionResult> Create(Event ev)
         {
-            _context.Events.Add(newEvent);
-            _context.SaveChanges();
-            return Ok(newEvent);
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            ev.OrganiserId = userId;
+            _context.Events.Add(ev);
+            await _context.SaveChangesAsync();
+            return Ok(ev);
         }
 
-        [HttpGet]
-        public IActionResult GetEvents()
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Organiser")]
+        public async Task<IActionResult> Update(int id, Event updated)
         {
-            return Ok(_context.Events.ToList());
+            var existing = await _context.Events.FindAsync(id);
+            if (existing == null) return NotFound();
+
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            if (existing.OrganiserId != userId) return Forbid();
+
+            existing.Name = updated.Name;
+            existing.Description = updated.Description;
+            existing.Date = updated.Date;
+            existing.Location = updated.Location;
+            existing.Distance = updated.Distance;
+            existing.EventType = updated.EventType;
+
+            await _context.SaveChangesAsync();
+            return Ok(existing);
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Organiser")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var existing = await _context.Events.FindAsync(id);
+            if (existing == null) return NotFound();
+
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            if (existing.OrganiserId != userId) return Forbid();
+
+            _context.Events.Remove(existing);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Deleted" });
         }
     }
 }
