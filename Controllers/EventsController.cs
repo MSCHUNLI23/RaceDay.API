@@ -12,7 +12,8 @@ namespace RaceDay.API.Controllers
     public class EventsController : ControllerBase
     {
         private readonly ApplicationDBContext _context;
-        public EventsController(ApplicationDBContext context) { _context = context; }
+        private readonly BlobService _blobService;
+        public EventsController(ApplicationDBContext context, BlobService blobService) { _context = context; _blobService = blobService; }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
@@ -30,10 +31,14 @@ namespace RaceDay.API.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Organiser")]
-        public async Task<IActionResult> Create(Event ev)
+        public async Task<IActionResult> Create([FromForm] Event ev, IFormFile? BannerImage)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             ev.OrganiserId = userId;
+            if (BannerImage != null)
+            {
+                ev.BannerUrl = await _blobService.UploadFileAsync(BannerImage);
+            }
             _context.Events.Add(ev);
             await _context.SaveChangesAsync();
             return Ok(ev);
